@@ -7,6 +7,6 @@ const Self = @This();
 origin: Point3,
 direction: Vec3,
 
-fn at(self: *Self, t: f32) Point3 {
-    return self.origin + t * self.direction;
+pub fn at(self: *const Self, t: f32) Point3 {
+    return self.origin + vec3.splat_vec3(t) * self.direction;
 }

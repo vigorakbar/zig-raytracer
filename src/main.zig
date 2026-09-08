@@ -13,19 +13,26 @@ const splat_vec3 = vec3.splat_vec3;
 // 𝑎 = 𝐝⋅𝐝
 // 𝑏 = −2𝐝⋅(originToCenter)
 // 𝑐 = (originToCenter)⋅(originToCenter) − 𝑟2
-fn hit_sphere(center: Point3, radius: f32, r: Ray) bool {
+fn hit_sphere(center: Point3, radius: f32, r: Ray) f32 {
     const originToCenter = center - r.origin;
     const a = vec3.dot(r.direction, r.direction);
     const b = -2.0 * vec3.dot(r.direction, originToCenter);
-    const c = vec3.dot(originToCenter, originToCenter) - radius * radius;
-    const discriminant = b * b - 4 * a * c;
+    const c = vec3.dot(originToCenter, originToCenter) - (radius * radius);
+    const discriminant = (b * b) - (4 * a * c);
 
-    return discriminant >= 0;
+    if (discriminant < 0) {
+        return -1.0;
+    } else {
+        return (-b - @sqrt(discriminant)) / (2 * a);
+    }
 }
 
 fn ray_color(r: Ray) Color {
-    if (hit_sphere(Point3{ 0.0, 0.0, -1.0 }, 0.5, r)) {
-        return Color{ 1.0, 0.0, 0.0 };
+    const sphere_center = Point3{ 0.0, 0.0, -1.0 };
+    const t = hit_sphere(sphere_center, 0.5, r);
+    if (t > 0.0) {
+        const normal_vector = vec3.unit_vec3(r.at(t) - sphere_center);
+        return vec3.splat_vec3(0.5) * (normal_vector + vec3.splat_vec3(1.0));
     }
     const unit_direction = vec3.unit_vec3(r.direction);
     const a = 0.5 * (unit_direction[1] + 1.0);
@@ -53,7 +60,7 @@ pub fn main(init: std.process.Init) !void {
     const pixel_delta_v: Vec3 = viewport_v / splat_vec3(@floatFromInt(image_height));
 
     // world coordinate of viewport point
-    const viewport_upper_left: Vec3 = camera_center + Vec3{ 0.0, 0.0, focal_length } - (viewport_u / splat_vec3(2.0)) - viewport_v / splat_vec3(2.0);
+    const viewport_upper_left: Vec3 = camera_center - Vec3{ 0.0, 0.0, focal_length } - (viewport_u / splat_vec3(2.0)) - viewport_v / splat_vec3(2.0);
     const pixel00_location: Vec3 = viewport_upper_left + (pixel_delta_u / splat_vec3(2.0)) + (pixel_delta_v / splat_vec3(2.0));
 
     const file = try std.Io.Dir.cwd().createFile(io, "output.ppm", .{});
