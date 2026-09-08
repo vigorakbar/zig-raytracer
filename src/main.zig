@@ -15,15 +15,15 @@ const splat_vec3 = vec3.splat_vec3;
 // 𝑐 = (originToCenter)⋅(originToCenter) − 𝑟2
 fn hit_sphere(center: Point3, radius: f32, r: Ray) f32 {
     const originToCenter = center - r.origin;
-    const a = vec3.dot(r.direction, r.direction);
-    const b = -2.0 * vec3.dot(r.direction, originToCenter);
-    const c = vec3.dot(originToCenter, originToCenter) - (radius * radius);
-    const discriminant = (b * b) - (4 * a * c);
+    const a = vec3.length_squared(r.direction);
+    const h = vec3.dot(r.direction, originToCenter);
+    const c = vec3.length_squared(originToCenter) - (radius * radius);
+    const discriminant = (h * h) - (a * c);
 
     if (discriminant < 0) {
         return -1.0;
     } else {
-        return (-b - @sqrt(discriminant)) / (2 * a);
+        return (h - @sqrt(discriminant)) / a;
     }
 }
 

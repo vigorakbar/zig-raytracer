@@ -2,8 +2,12 @@ pub const Vec3 = @Vector(3, f32);
 // alias for clarity
 pub const Point3 = Vec3;
 
+pub fn length_squared(v: Vec3) f32 {
+    return @reduce(.Add, v * v);
+}
+
 pub fn length(v: Vec3) f32 {
-    return @sqrt(@reduce(.Add, v * v));
+    return @sqrt(length_squared(v));
 }
 
 pub fn dot(a: Vec3, b: Vec3) f32 {
