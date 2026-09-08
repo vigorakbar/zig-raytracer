@@ -8,7 +8,25 @@ const Point3 = vec3.Point3;
 const Color = color.Color;
 const splat_vec3 = vec3.splat_vec3;
 
+// 𝑎𝑥2 + 𝑏𝑥 + 𝑐 =0
+// solve using quadratic formula to find ray-sphere intersection
+// 𝑎 = 𝐝⋅𝐝
+// 𝑏 = −2𝐝⋅(originToCenter)
+// 𝑐 = (originToCenter)⋅(originToCenter) − 𝑟2
+fn hit_sphere(center: Point3, radius: f32, r: Ray) bool {
+    const originToCenter = center - r.origin;
+    const a = vec3.dot(r.direction, r.direction);
+    const b = -2.0 * vec3.dot(r.direction, originToCenter);
+    const c = vec3.dot(originToCenter, originToCenter) - radius * radius;
+    const discriminant = b * b - 4 * a * c;
+
+    return discriminant >= 0;
+}
+
 fn ray_color(r: Ray) Color {
+    if (hit_sphere(Point3{ 0.0, 0.0, -1.0 }, 0.5, r)) {
+        return Color{ 1.0, 0.0, 0.0 };
+    }
     const unit_direction = vec3.unit_vec3(r.direction);
     const a = 0.5 * (unit_direction[1] + 1.0);
     return splat_vec3(1.0 - a) * Color{ 1.0, 1.0, 1.0 } + splat_vec3(a) * Color{ 0.5, 0.7, 1.0 };
@@ -23,7 +41,9 @@ pub fn main(init: std.process.Init) !void {
 
     const focal_length: f32 = 1.0;
     const viewport_height: f32 = 2.0;
-    const viewport_width: f32 = viewport_height * @as(f32, @floatFromInt(image_width / image_height));
+    const viewport_width: f32 = viewport_height *
+        @as(f32, @floatFromInt(image_width)) /
+        @as(f32, @floatFromInt(image_height));
     const camera_center: Point3 = .{ 0.0, 0.0, 0.0 };
 
     const viewport_u: Vec3 = .{ viewport_width, 0.0, 0.0 };
@@ -43,27 +63,19 @@ pub fn main(init: std.process.Init) !void {
     var file_writer = file.writer(io, &buf);
     const writer_interface = &file_writer.interface;
 
-    // == std err writer for console debugging ==
+    // std err writer for console debugging
     var stderr_buf: [1024]u8 = undefined;
     var stderr_writer = std.Io.File.stderr().writer(io, &stderr_buf);
     const log = &stderr_writer.interface;
-    // == ==
 
     // PPM header
     try writer_interface.print("P3\n{d} {d}\n255\n", .{ image_width, image_height });
 
-    // const width_f: f32 = @floatFromInt(image_width - 1);
-    // const height_f: f32 = @floatFromInt(image_height - 1);
     for (0..image_height) |j| {
         try log.print("\rProgress: {d}/{d}", .{ j + 1, image_height });
         try log.flush();
 
         for (0..image_width) |i| {
-            // const pixel_color: Color = .{
-            //     @as(f32, @floatFromInt(i)) / @as(f32, width_f), // r
-            //     @as(f32, @floatFromInt(j)) / @as(f32, height_f), // g
-            //     0.5, // b
-            // };
             const pixel_center: Vec3 = pixel00_location +
                 (splat_vec3(@floatFromInt(i)) * pixel_delta_u) +
                 (splat_vec3(@floatFromInt(j)) * pixel_delta_v);
