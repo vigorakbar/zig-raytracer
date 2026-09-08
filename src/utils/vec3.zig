@@ -18,6 +18,10 @@ pub fn cross(a: Vec3, b: Vec3) Vec3 {
     };
 }
 
+pub fn splat_vec3(a: f32) Vec3 {
+    return @as(Vec3, @splat(a));
+}
+
 pub fn unit_vec3(a: Vec3) Vec3 {
-    return a / length(a);
+    return a / splat_vec3(length(a));
 }
