@@ -1,5 +1,6 @@
 const std = @import("std");
 const Ray = @import("utils/Ray.zig");
+const HittableList = @import("./utils/hittable_list.zig").HittableList;
 
 const vec3 = @import("utils/vec3.zig");
 const color = @import("utils/color.zig");
@@ -8,32 +9,30 @@ const Point3 = vec3.Point3;
 const Color = color.Color;
 const splat_vec3 = vec3.splat_vec3;
 
-// 𝑎𝑥2 + 𝑏𝑥 + 𝑐 =0
-// solve using quadratic formula to find ray-sphere intersection
-// 𝑎 = 𝐝⋅𝐝
-// 𝑏 = −2𝐝⋅(originToCenter)
-// 𝑐 = (originToCenter)⋅(originToCenter) − 𝑟2
-fn hit_sphere(center: Point3, radius: f32, r: Ray) f32 {
-    const originToCenter = center - r.origin;
-    const a = vec3.length_squared(r.direction);
-    const h = vec3.dot(r.direction, originToCenter);
-    const c = vec3.length_squared(originToCenter) - (radius * radius);
-    const discriminant = (h * h) - (a * c);
+// // 𝑎𝑥2 + 𝑏𝑥 + 𝑐 =0
+// // solve using quadratic formula to find ray-sphere intersection
+// // 𝑎 = 𝐝⋅𝐝
+// // 𝑏 = −2𝐝⋅(originToCenter)
+// // 𝑐 = (originToCenter)⋅(originToCenter) − 𝑟2
+// fn hit_sphere(center: Point3, radius: f32, r: Ray) f32 {
+//     const originToCenter = center - r.origin;
+//     const a = vec3.length_squared(r.direction);
+//     const h = vec3.dot(r.direction, originToCenter);
+//     const c = vec3.length_squared(originToCenter) - (radius * radius);
+//     const discriminant = (h * h) - (a * c);
 
-    if (discriminant < 0) {
-        return -1.0;
-    } else {
-        return (h - @sqrt(discriminant)) / a;
-    }
-}
+//     if (discriminant < 0) {
+//         return -1.0;
+//     } else {
+//         return (h - @sqrt(discriminant)) / a;
+//     }
+// }
 
-fn ray_color(r: Ray) Color {
-    const sphere_center = Point3{ 0.0, 0.0, -1.0 };
-    const t = hit_sphere(sphere_center, 0.5, r);
-    if (t > 0.0) {
-        const normal_vector = vec3.unit_vec3(r.at(t) - sphere_center);
-        return vec3.splat_vec3(0.5) * (normal_vector + vec3.splat_vec3(1.0));
+fn ray_color(r: *const Ray, world: *HittableList) Color {
+    if (world.hit(r, 0.0, std.math.inf(f32))) |rec| {
+        return splat_vec3(0.5) * (rec.normal + Color{ 1.0, 1.0, 1.0 });
     }
+
     const unit_direction = vec3.unit_vec3(r.direction);
     const a = 0.5 * (unit_direction[1] + 1.0);
     return splat_vec3(1.0 - a) * Color{ 1.0, 1.0, 1.0 } + splat_vec3(a) * Color{ 0.5, 0.7, 1.0 };
@@ -45,6 +44,23 @@ pub fn main(init: std.process.Init) !void {
     const image_width: usize = 400;
     var image_height: usize = @intFromFloat(image_width / aspect_ratio);
     image_height = if (image_height < 1) 1 else image_height;
+
+    // World
+    var debug_alloc: std.heap.DebugAllocator(.{}) = .init;
+    defer _ = debug_alloc.deinit();
+    const gpa = debug_alloc.allocator();
+
+    var world: HittableList = .{};
+    defer world.deinit(gpa);
+
+    try world.add(gpa, .{ .sphere = .{ .center = .{ 0.0, 0.0, -1.0 }, .radius = 0.5 } });
+
+    try world.add(gpa, .{ .sphere = .{
+        .center = .{ 0.0, -100.5, -1.0 },
+        .radius = 100.0,
+    } });
+
+    // Camera
 
     const focal_length: f32 = 1.0;
     const viewport_height: f32 = 2.0;
@@ -89,7 +105,7 @@ pub fn main(init: std.process.Init) !void {
             const ray_direction: Vec3 = pixel_center - camera_center;
             const r: Ray = .{ .origin = camera_center, .direction = ray_direction };
 
-            const pixel_color: Color = ray_color(r);
+            const pixel_color: Color = ray_color(&r, &world);
 
             try color.write_colors(pixel_color, writer_interface);
         }

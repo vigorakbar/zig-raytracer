@@ -1,0 +1,29 @@
+const Hittable = @import("./hittable.zig").Hittable;
+const HitRecord = @import("./hittable.zig").HitRecord;
+const std = @import("std");
+const Ray = @import("./Ray.zig");
+
+pub const HittableList = struct {
+    objects: std.ArrayList(Hittable) = .empty,
+    pub fn add(self: *HittableList, gpa: std.mem.Allocator, item: Hittable) !void {
+        try self.objects.append(gpa, item);
+    }
+
+    pub fn deinit(self: *HittableList, gpa: std.mem.Allocator) void {
+        self.objects.deinit(gpa);
+    }
+
+    pub fn hit(self: *HittableList, ray: *const Ray, t_min: f32, t_max: f32) ?HitRecord {
+        var closest_so_far = t_max;
+        var result: ?HitRecord = null;
+
+        for (self.objects.items) |item| {
+            if (item.hit(ray, t_min, closest_so_far)) |rec| {
+                closest_so_far = rec.t;
+                result = rec;
+            }
+        }
+
+        return result;
+    }
+};
