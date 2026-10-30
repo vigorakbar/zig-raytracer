@@ -1,11 +1,11 @@
 const std = @import("std");
-const Ray = @import("utils/Ray.zig");
-const HittableList = @import("./utils/hittable_list.zig").HittableList;
-const Interval = @import("./utils/Interval.zig");
-const Camera = @import("./utils/Camera.zig");
+const Ray = @import("core/Ray.zig");
+const HittableList = @import("./core/HittableList.zig");
+const Interval = @import("./core/Interval.zig");
+const Camera = @import("./core/Camera.zig");
 
-const vec3 = @import("utils/vec3.zig");
-const color = @import("utils/color.zig");
+const vec3 = @import("core/vec3.zig");
+const color = @import("core/color.zig");
 const Vec3 = vec3.Vec3;
 const Point3 = vec3.Point3;
 const Color = color.Color;

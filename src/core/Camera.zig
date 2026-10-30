@@ -1,6 +1,6 @@
 const std = @import("std");
 const Ray = @import("Ray.zig");
-const HittableList = @import("./hittable_list.zig").HittableList;
+const HittableList = @import("./HittableList.zig");
 const Interval = @import("./Interval.zig");
 
 const vec3 = @import("vec3.zig");
