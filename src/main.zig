@@ -30,7 +30,7 @@ pub fn main(init: std.process.Init) !void {
     } });
 
     // Camera
-    var cam: Camera = .init(16.0 / 9.0, 400);
+    var cam: Camera = .init(.{});
 
     try cam.render(io, &world);
 }
