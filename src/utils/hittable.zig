@@ -1,5 +1,7 @@
 const Ray = @import("./Ray.zig");
 const vec3 = @import("./vec3.zig");
+const Interval = @import("./Interval.zig");
+
 const Point3 = vec3.Point3;
 const Vec3 = vec3.Vec3;
 const splat_vec3 = vec3.splat_vec3;
@@ -15,7 +17,7 @@ pub const Sphere = struct {
     center: Point3,
     radius: f32,
 
-    pub fn hit(self: *const Sphere, r: *const Ray, t_min: f32, t_max: f32) ?HitRecord {
+    pub fn hit(self: *const Sphere, r: *const Ray, ray_t: Interval) ?HitRecord {
         const originToCenter = self.center - r.origin;
         const a = vec3.length_squared(r.direction);
         const h = vec3.dot(r.direction, originToCenter);
@@ -28,9 +30,9 @@ pub const Sphere = struct {
 
         const sqrtd = @sqrt(discriminant);
         var root = (h - sqrtd) / a;
-        if (root <= t_min or root >= t_max) {
+        if (!ray_t.surrounds(root)) {
             root = (h + sqrtd) / a;
-            if (root <= t_min or root >= t_max) {
+            if (!ray_t.surrounds(root)) {
                 return null;
             }
         }
@@ -50,9 +52,9 @@ pub const Sphere = struct {
 pub const Hittable = union(enum) {
     sphere: Sphere,
 
-    pub fn hit(self: *const Hittable, r: *const Ray, t_min: f32, t_max: f32) ?HitRecord {
+    pub fn hit(self: *const Hittable, r: *const Ray, ray_t: Interval) ?HitRecord {
         return switch (self.*) {
-            .sphere => |s| s.hit(r, t_min, t_max),
+            .sphere => |s| s.hit(r, ray_t),
         };
     }
 };

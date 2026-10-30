@@ -1,6 +1,7 @@
 const std = @import("std");
 const Ray = @import("utils/Ray.zig");
 const HittableList = @import("./utils/hittable_list.zig").HittableList;
+const Interval = @import("./utils/Interval.zig");
 
 const vec3 = @import("utils/vec3.zig");
 const color = @import("utils/color.zig");
@@ -29,7 +30,7 @@ const splat_vec3 = vec3.splat_vec3;
 // }
 
 fn ray_color(r: *const Ray, world: *HittableList) Color {
-    if (world.hit(r, 0.0, std.math.inf(f32))) |rec| {
+    if (world.hit(r, Interval{ .min = 0.0, .max = std.math.inf(f32) })) |rec| {
         return splat_vec3(0.5) * (rec.normal + Color{ 1.0, 1.0, 1.0 });
     }
 
