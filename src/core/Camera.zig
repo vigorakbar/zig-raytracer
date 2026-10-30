@@ -18,7 +18,8 @@ prng: std.Random.DefaultPrng,
 aspect_ratio: f32,
 image_width: usize,
 samples_per_pixel: usize,
-pixel_samples_scale: f32,
+pixel_sample_scales: f32,
+max_depth: usize,
 image_height: usize, // Rendered image height
 camera_center: Point3, // Camera center
 pixel00_location: Point3, // Location of pixel 0, 0
@@ -29,6 +30,7 @@ pub const InitOptions = struct {
     aspect_ratio: f32 = 16.0 / 9.0,
     image_width: usize = 400,
     samples_per_pixel: usize = 100,
+    max_depth: usize = 50,
 };
 pub fn init(options: InitOptions) Self {
     const width_f: f32 = @floatFromInt(options.image_width);
@@ -59,12 +61,13 @@ pub fn init(options: InitOptions) Self {
         .aspect_ratio = options.aspect_ratio,
         .image_width = options.image_width,
         .samples_per_pixel = options.samples_per_pixel,
+        .max_depth = options.max_depth,
         .camera_center = camera_center,
         .image_height = image_height,
         .pixel00_location = pixel00_location,
         .pixel_delta_u = pixel_delta_u,
         .pixel_delta_v = pixel_delta_v,
-        .pixel_samples_scale = pixel_sample_scales,
+        .pixel_sample_scales = pixel_sample_scales,
         .prng = .init(0),
     };
 }
@@ -95,10 +98,10 @@ pub fn render(self: *Self, io: std.Io, world: *HittableList) !void {
             var pixel_color: Color = .{ 0.0, 0.0, 0.0 };
             for (0..self.samples_per_pixel) |_| {
                 const r = self.get_ray(rng, i, j);
-                pixel_color += ray_color(&r, world);
+                pixel_color += ray_color(&r, self.max_depth, world, rng);
             }
 
-            try color.write_colors(splat_vec3(self.pixel_samples_scale) * pixel_color, writer_interface);
+            try color.write_colors(splat_vec3(self.pixel_sample_scales) * pixel_color, writer_interface);
         }
     }
     try writer_interface.flush();
@@ -107,9 +110,17 @@ pub fn render(self: *Self, io: std.Io, world: *HittableList) !void {
     try log.flush();
 }
 
-fn ray_color(r: *const Ray, world: *HittableList) Color {
-    if (world.hit(r, Interval{ .min = 0.0, .max = std.math.inf(f32) })) |rec| {
-        return splat_vec3(0.5) * (rec.normal + Color{ 1.0, 1.0, 1.0 });
+fn ray_color(r: *const Ray, depth: usize, world: *HittableList, rng: std.Random) Color {
+    if (depth <= 0) return Color{ 0.0, 0.0, 0.0 };
+
+    if (world.hit(r, Interval{ .min = 0.001, .max = std.math.inf(f32) })) |rec| {
+        const direction = rec.normal + vec3.random_unit_vec3(rng);
+
+        const bounced_ray: Ray = .{
+            .origin = rec.point,
+            .direction = direction,
+        };
+        return splat_vec3(0.5) * ray_color(&bounced_ray, depth - 1, world, rng);
     }
 
     const unit_direction = vec3.unit_vec3(r.direction);

@@ -1,3 +1,6 @@
+const std = @import("std");
+const numbers = @import("./numbers.zig");
+
 pub const Vec3 = @Vector(3, f32);
 // alias for clarity
 pub const Point3 = Vec3;
@@ -28,4 +31,40 @@ pub fn splat_vec3(a: f32) Vec3 {
 
 pub fn unit_vec3(a: Vec3) Vec3 {
     return a / splat_vec3(length(a));
+}
+
+pub fn random(rng: std.Random) Vec3 {
+    return .{
+        rng.float(f32),
+        rng.float(f32),
+        rng.float(f32),
+    };
+}
+
+pub fn random_range(rng: std.Random, min: f32, max: f32) Vec3 {
+    return .{
+        numbers.random_range(rng, min, max),
+        numbers.random_range(rng, min, max),
+        numbers.random_range(rng, min, max),
+    };
+}
+
+pub fn random_unit_vec3(rng: std.Random) Vec3 {
+    while (true) {
+        // find point sample inside sphere from the cube bounding box with x y z in range (-1.0, 1.0)
+        const sample = random_range(rng, -1.0, 1.0);
+        const sample_len_squared = length_squared(sample);
+        // ignore near 0 (very near center) point to avoid floating point precision error
+        if (sample_len_squared > 1e-30 and sample_len_squared <= 1.0)
+            return sample / splat_vec3(length(sample));
+    }
+}
+
+pub fn random_on_hemisphere(rng: std.Random, normal: Vec3) Vec3 {
+    const on_unit_sphere = random_unit_vec3(rng);
+    if (dot(on_unit_sphere, normal) > 0.0) {
+        return on_unit_sphere;
+    } else {
+        return splat_vec3(-1.0) * on_unit_sphere;
+    }
 }
