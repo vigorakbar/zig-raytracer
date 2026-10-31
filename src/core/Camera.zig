@@ -12,7 +12,7 @@ const splat_vec3 = vec3.splat_vec3;
 
 // --- START ---
 
-const Self = @This();
+const Camera = @This();
 prng: std.Random.DefaultPrng,
 
 aspect_ratio: f32,
@@ -32,7 +32,7 @@ pub const InitOptions = struct {
     samples_per_pixel: usize = 100,
     max_depth: usize = 50,
 };
-pub fn init(options: InitOptions) Self {
+pub fn init(options: InitOptions) Camera {
     const width_f: f32 = @floatFromInt(options.image_width);
     var image_height: usize = @intFromFloat(width_f / options.aspect_ratio);
     image_height = if (image_height < 1) 1 else image_height;
@@ -72,7 +72,7 @@ pub fn init(options: InitOptions) Self {
     };
 }
 
-pub fn render(self: *Self, io: std.Io, world: *HittableList) !void {
+pub fn render(self: *Camera, io: std.Io, world: *HittableList) !void {
     const rng = self.prng.random();
 
     const file = try std.Io.Dir.cwd().createFile(io, "output.ppm", .{});
@@ -128,7 +128,7 @@ fn ray_color(r: *const Ray, depth: usize, world: *HittableList, rng: std.Random)
     return splat_vec3(1.0 - a) * Color{ 1.0, 1.0, 1.0 } + splat_vec3(a) * Color{ 0.5, 0.7, 1.0 };
 }
 
-fn get_ray(self: *Self, rng: std.Random, i: usize, j: usize) Ray {
+fn get_ray(self: *Camera, rng: std.Random, i: usize, j: usize) Ray {
     // Construct a camera ray originating from the origin and directed at randomly sampled
     // point around the pixel location i, j.
     const offset = sample_square(rng);
