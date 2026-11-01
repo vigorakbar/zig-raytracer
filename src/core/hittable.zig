@@ -1,4 +1,5 @@
 const Ray = @import("./Ray.zig");
+const Material = @import("./material.zig").Material;
 const vec3 = @import("./vec3.zig");
 const Interval = @import("./Interval.zig");
 
@@ -9,6 +10,7 @@ const splat_vec3 = vec3.splat_vec3;
 pub const HitRecord = struct {
     point: Point3,
     normal: Vec3,
+    material: *const Material,
     t: f32,
     front_face: bool,
 };
@@ -16,6 +18,7 @@ pub const HitRecord = struct {
 pub const Sphere = struct {
     center: Point3,
     radius: f32,
+    material: *const Material,
 
     pub fn hit(self: *const Sphere, r: *const Ray, ray_t: Interval) ?HitRecord {
         const originToCenter = self.center - r.origin;
@@ -40,11 +43,12 @@ pub const Sphere = struct {
         const point = r.at(root);
         const outward_normal = (point - self.center) / splat_vec3(self.radius);
         const front_face = vec3.dot(r.direction, outward_normal) < 0; // detect if ray is inside or outside the sphere
-        return .{
+        return HitRecord{
             .t = root,
             .point = point,
             .normal = if (front_face) outward_normal else -outward_normal,
             .front_face = front_face,
+            .material = self.material,
         };
     }
 };

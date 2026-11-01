@@ -114,13 +114,10 @@ fn ray_color(r: *const Ray, depth: usize, world: *HittableList, rng: std.Random)
     if (depth <= 0) return Color{ 0.0, 0.0, 0.0 };
 
     if (world.hit(r, Interval{ .min = 0.001, .max = std.math.inf(f32) })) |rec| {
-        const direction = rec.normal + vec3.random_unit_vec3(rng);
-
-        const bounced_ray: Ray = .{
-            .origin = rec.point,
-            .direction = direction,
-        };
-        return splat_vec3(0.5) * ray_color(&bounced_ray, depth - 1, world, rng);
+        if (rec.material.scatter(r, &rec, rng)) |scatter| {
+            return scatter.attenuation * ray_color(&scatter.scattered, depth - 1, world, rng);
+        }
+        return Color{ 0.0, 0.0, 0.0 };
     }
 
     const unit_direction = vec3.unit_vec3(r.direction);

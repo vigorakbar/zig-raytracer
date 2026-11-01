@@ -13,6 +13,12 @@ pub fn length(v: Vec3) f32 {
     return @sqrt(length_squared(v));
 }
 
+pub fn near_zero(v: Vec3) bool {
+    // return true if vec3 is close to zero in all dimension
+    const s: f32 = 1e-8;
+    return (@abs(v[0]) < s) and (@abs(v[1]) < s) and (@abs(v[2]) < s);
+}
+
 pub fn dot(a: Vec3, b: Vec3) f32 {
     return @reduce(.Add, a * b);
 }
@@ -67,4 +73,8 @@ pub fn random_on_hemisphere(rng: std.Random, normal: Vec3) Vec3 {
     } else {
         return splat_vec3(-1.0) * on_unit_sphere;
     }
+}
+
+pub fn reflect(vec: Vec3, normal: Vec3) Vec3 {
+    return vec - splat_vec3(2.0) * splat_vec3(dot(vec, normal)) * normal;
 }
