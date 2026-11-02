@@ -32,8 +32,8 @@ pub fn main(init: std.process.Init) !void {
 
     const material_ground: material.Material = .{ .lambertian = .{ .albedo = .{ 0.8, 0.8, 0.0 } } };
     const material_center: material.Material = .{ .lambertian = .{ .albedo = .{ 0.1, 0.2, 0.5 } } };
-    const material_left: material.Material = .{ .metal = .{ .albedo = .{ 0.8, 0.8, 0.8 } } };
-    const material_right: material.Material = .{ .metal = .{ .albedo = .{ 0.8, 0.6, 0.2 } } };
+    const material_left: material.Material = .{ .metal = .{ .albedo = .{ 0.8, 0.8, 0.8 }, .fuzz = 0.3 } };
+    const material_right: material.Material = .{ .metal = .{ .albedo = .{ 0.8, 0.6, 0.2 }, .fuzz = 1.0 } };
 
     try world.add(gpa, .{ .sphere = .{ .center = .{ 0.0, -100.5, -1.0 }, .radius = 100.0, .material = &material_ground } });
     try world.add(gpa, .{ .sphere = .{ .center = .{ 0.0, 0.0, -1.2 }, .radius = 0.5, .material = &material_center } });

@@ -32,14 +32,20 @@ pub const Lambertian = struct {
 
 pub const Metal = struct {
     albedo: Color,
+    fuzz: f32,
 
     pub fn scatter(self: *const Metal, ray: *const Ray, rec: *const HitRecord, rng: std.Random) ?Scatter {
-        _ = rng;
+        var reflected = vec3.reflect(ray.direction, rec.normal);
+        reflected = vec3.unit_vec3(reflected) + (vec3.splat_vec3(self.fuzz) * vec3.random_unit_vec3(rng));
 
-        const reflected = vec3.reflect(ray.direction, rec.normal);
+        const scaterred = Ray{ .origin = rec.point, .direction = reflected };
+
+        if (vec3.dot(scaterred.direction, rec.normal) <= 0.0) {
+            return null;
+        }
 
         return Scatter{
-            .scattered = Ray{ .origin = rec.point, .direction = reflected },
+            .scattered = scaterred,
             .attenuation = self.albedo,
         };
     }
