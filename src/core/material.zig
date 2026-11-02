@@ -54,7 +54,7 @@ pub const Metal = struct {
 pub const Dielectric = struct {
     refraction_index: f32,
 
-    pub fn scatter(self: *const Dielectric, ray: *const Ray, rec: *const HitRecord) ?Scatter {
+    pub fn scatter(self: *const Dielectric, ray: *const Ray, rec: *const HitRecord, rng: std.Random) ?Scatter {
         const refraction_index = if (rec.front_face) 1.0 / self.refraction_index else self.refraction_index;
 
         const unit_direction = vec3.unit_vec3(ray.direction);
@@ -62,20 +62,27 @@ pub const Dielectric = struct {
         const sin_theta = @sqrt(1.0 - cos_theta * cos_theta);
 
         const cannot_refract = refraction_index * sin_theta > 1.0;
-        var refracted: vec3.Vec3 = undefined;
-        if (cannot_refract) {
-            refracted = vec3.reflect(unit_direction, rec.normal);
+        var direction: vec3.Vec3 = undefined;
+        if (cannot_refract or reflectance(cos_theta, refraction_index) > rng.float(f32)) {
+            direction = vec3.reflect(unit_direction, rec.normal);
         } else {
-            refracted = vec3.refract(unit_direction, rec.normal, refraction_index);
+            direction = vec3.refract(unit_direction, rec.normal, refraction_index);
         }
 
         return Scatter{
             .attenuation = Color{ 1.0, 1.0, 1.0 },
             .scattered = Ray{
                 .origin = rec.point,
-                .direction = refracted,
+                .direction = direction,
             },
         };
+    }
+
+    fn reflectance(cosine: f32, refraction_index: f32) f32 {
+        // Schlik's approximation for reflectetance
+        var r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
+        r0 = r0 * r0;
+        return r0 + (1.0 - r0) * std.math.pow(f32, (1.0 - cosine), 5.0);
     }
 };
 
@@ -88,7 +95,7 @@ pub const Material = union(enum) {
         return switch (self.*) {
             .lambertian => |s| s.scatter(ray, rec, rng),
             .metal => |s| s.scatter(ray, rec, rng),
-            .dielectric => |s| s.scatter(ray, rec),
+            .dielectric => |s| s.scatter(ray, rec, rng),
         };
     }
 };
