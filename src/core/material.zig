@@ -51,14 +51,35 @@ pub const Metal = struct {
     }
 };
 
+pub const Dielectric = struct {
+    refraction_index: f32,
+
+    pub fn scatter(self: *const Dielectric, ray: *const Ray, rec: *const HitRecord) ?Scatter {
+        const refraction_index = if (rec.front_face) 1.0 / self.refraction_index else self.refraction_index;
+
+        const unit_direction = vec3.unit_vec3(ray.direction);
+        const refracted = vec3.refract(unit_direction, rec.normal, refraction_index);
+
+        return Scatter{
+            .attenuation = Color{ 1.0, 1.0, 1.0 },
+            .scattered = Ray{
+                .origin = rec.point,
+                .direction = refracted,
+            },
+        };
+    }
+};
+
 pub const Material = union(enum) {
     lambertian: Lambertian,
     metal: Metal,
+    dielectric: Dielectric,
 
     pub fn scatter(self: *const Material, ray: *const Ray, rec: *const HitRecord, rng: std.Random) ?Scatter {
         return switch (self.*) {
             .lambertian => |s| s.scatter(ray, rec, rng),
             .metal => |s| s.scatter(ray, rec, rng),
+            .dielectric => |s| s.scatter(ray, rec),
         };
     }
 };

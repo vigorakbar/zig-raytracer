@@ -78,3 +78,10 @@ pub fn random_on_hemisphere(rng: std.Random, normal: Vec3) Vec3 {
 pub fn reflect(vec: Vec3, normal: Vec3) Vec3 {
     return vec - splat_vec3(2.0) * splat_vec3(dot(vec, normal)) * normal;
 }
+
+pub fn refract(unit_vec: Vec3, normal: Vec3, eta_ratio: f32) Vec3 {
+    const cos_theta: f32 = @min(dot(splat_vec3(-1.0) * unit_vec, normal), 1.0);
+    const refracted_perpendi = splat_vec3(eta_ratio) * (unit_vec + splat_vec3(cos_theta) * normal);
+    const refracted_parallel = splat_vec3(-1.0 * @sqrt(@abs(1.0 - length_squared(refracted_perpendi)))) * normal;
+    return refracted_perpendi + refracted_parallel;
+}
