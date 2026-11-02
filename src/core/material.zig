@@ -58,7 +58,16 @@ pub const Dielectric = struct {
         const refraction_index = if (rec.front_face) 1.0 / self.refraction_index else self.refraction_index;
 
         const unit_direction = vec3.unit_vec3(ray.direction);
-        const refracted = vec3.refract(unit_direction, rec.normal, refraction_index);
+        const cos_theta: f32 = @min(vec3.dot(vec3.splat_vec3(-1.0) * unit_direction, rec.normal), 1.0);
+        const sin_theta = @sqrt(1.0 - cos_theta * cos_theta);
+
+        const cannot_refract = refraction_index * sin_theta > 1.0;
+        var refracted: vec3.Vec3 = undefined;
+        if (cannot_refract) {
+            refracted = vec3.reflect(unit_direction, rec.normal);
+        } else {
+            refracted = vec3.refract(unit_direction, rec.normal, refraction_index);
+        }
 
         return Scatter{
             .attenuation = Color{ 1.0, 1.0, 1.0 },

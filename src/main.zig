@@ -37,7 +37,7 @@ pub fn main(init: std.process.Init) !void {
         .albedo = .{ 0.1, 0.2, 0.5 },
     } };
     const material_left: material.Material = .{ .dielectric = .{
-        .refraction_index = 1.5,
+        .refraction_index = 1.0 / 1.33,
     } };
     const material_right: material.Material = .{ .metal = .{
         .albedo = .{ 0.8, 0.6, 0.2 },
