@@ -23,21 +23,19 @@ pub fn main(init: std.process.Init) !void {
     var world: HittableList = .{};
     defer world.deinit(gpa);
 
-    // try world.add(gpa, .{ .sphere = .{ .center = .{ 0.0, 0.0, -1.0 }, .radius = 0.5 } });
-
-    // try world.add(gpa, .{ .sphere = .{
-    //     .center = .{ 0.0, -100.5, -1.0 },
-    //     .radius = 100.0,
-    // } });
-
     const material_ground: material.Material = .{ .lambertian = .{
         .albedo = .{ 0.8, 0.8, 0.0 },
     } };
     const material_center: material.Material = .{ .lambertian = .{
         .albedo = .{ 0.1, 0.2, 0.5 },
     } };
+    // Hollow glass outer layer (glass). glass (1.50) <- air outside (1.0). result: 1.5/1.0
     const material_left: material.Material = .{ .dielectric = .{
-        .refraction_index = 1.0 / 1.33,
+        .refraction_index = 1.5,
+    } };
+    // Hollow glass inside layer (air). air inside (1.0) <- glass (1.5). result: 1.0 / 1.5
+    const material_bubble: material.Material = .{ .dielectric = .{
+        .refraction_index = 1.0 / 1.5,
     } };
     const material_right: material.Material = .{ .metal = .{
         .albedo = .{ 0.8, 0.6, 0.2 },
@@ -58,6 +56,11 @@ pub fn main(init: std.process.Init) !void {
         .center = .{ -1.0, 0.0, -1.0 },
         .radius = 0.5,
         .material = &material_left,
+    } });
+    try world.add(gpa, .{ .sphere = .{
+        .center = .{ -1.0, 0.0, -1.0 },
+        .radius = 0.4,
+        .material = &material_bubble,
     } });
     try world.add(gpa, .{ .sphere = .{
         .center = .{ 1.0, 0.0, -1.0 },
