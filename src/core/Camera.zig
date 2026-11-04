@@ -20,6 +20,8 @@ image_width: usize,
 samples_per_pixel: usize,
 pixel_sample_scales: f32,
 max_depth: usize,
+v_fov: f32,
+
 image_height: usize, // Rendered image height
 camera_center: Point3, // Camera center
 pixel00_location: Point3, // Location of pixel 0, 0
@@ -31,6 +33,7 @@ pub const InitOptions = struct {
     image_width: usize = 400,
     samples_per_pixel: usize = 100,
     max_depth: usize = 50,
+    v_fov: f32 = 90.0,
 };
 pub fn init(options: InitOptions) Camera {
     const width_f: f32 = @floatFromInt(options.image_width);
@@ -38,7 +41,11 @@ pub fn init(options: InitOptions) Camera {
     image_height = if (image_height < 1) 1 else image_height;
 
     const focal_length: f32 = 1.0;
-    const viewport_height: f32 = 2.0;
+
+    // tan (theta/2) = opposite (viewport_height/2) / adjacent (focal_length)
+    // viewport_heigth = 2 * focal_length * tan (theta / 2.0)
+    const theta: f32 = std.math.degreesToRadians(options.v_fov);
+    const viewport_height = 2.0 * focal_length * @tan(theta / 2.0);
     const viewport_width: f32 = viewport_height *
         @as(f32, @floatFromInt(options.image_width)) /
         @as(f32, @floatFromInt(image_height));
@@ -62,6 +69,7 @@ pub fn init(options: InitOptions) Camera {
         .image_width = options.image_width,
         .samples_per_pixel = options.samples_per_pixel,
         .max_depth = options.max_depth,
+        .v_fov = options.v_fov,
         .camera_center = camera_center,
         .image_height = image_height,
         .pixel00_location = pixel00_location,
