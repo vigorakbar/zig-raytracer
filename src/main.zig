@@ -69,7 +69,12 @@ pub fn main(init: std.process.Init) !void {
     } });
 
     // Camera
-    var cam: Camera = .init(.{});
+    var cam: Camera = .init(.{
+        .vert_fov = 20.0,
+        .look_from = Point3{ -2.0, 2.0, 1.0 },
+        .look_at = Point3{ 0.0, 0.0, -1.0 },
+        .view_up = Vec3{ 0.0, 1.0, 0.0 },
+    });
 
     try cam.render(io, &world);
 }

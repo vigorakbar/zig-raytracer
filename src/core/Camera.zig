@@ -20,7 +20,15 @@ image_width: usize,
 samples_per_pixel: usize,
 pixel_sample_scales: f32,
 max_depth: usize,
-v_fov: f32,
+vert_fov: f32,
+look_from: Vec3,
+look_at: Vec3,
+view_up: Vec3, // camera-relative "up" direction
+
+// camera frame basis vectors
+u: Vec3,
+v: Vec3,
+w: Vec3,
 
 image_height: usize, // Rendered image height
 camera_center: Point3, // Camera center
@@ -33,33 +41,40 @@ pub const InitOptions = struct {
     image_width: usize = 400,
     samples_per_pixel: usize = 100,
     max_depth: usize = 50,
-    v_fov: f32 = 90.0,
+    vert_fov: f32 = 90.0,
+    look_from: Vec3 = .{ 0.0, 0.0, 0.0 },
+    look_at: Vec3 = .{ 0.0, 0.0, -1.0 },
+    view_up: Vec3 = .{ 0.0, 1.0, 0.0 },
 };
 pub fn init(options: InitOptions) Camera {
     const width_f: f32 = @floatFromInt(options.image_width);
     var image_height: usize = @intFromFloat(width_f / options.aspect_ratio);
     image_height = if (image_height < 1) 1 else image_height;
 
+    const camera_center: Point3 = options.look_from;
+
     const focal_length: f32 = 1.0;
 
     // tan (theta/2) = opposite (viewport_height/2) / adjacent (focal_length)
     // viewport_heigth = 2 * focal_length * tan (theta / 2.0)
-    const theta: f32 = std.math.degreesToRadians(options.v_fov);
+    const theta: f32 = std.math.degreesToRadians(options.vert_fov);
     const viewport_height = 2.0 * focal_length * @tan(theta / 2.0);
     const viewport_width: f32 = viewport_height *
         @as(f32, @floatFromInt(options.image_width)) /
         @as(f32, @floatFromInt(image_height));
 
-    const camera_center: Point3 = .{ 0.0, 0.0, 0.0 };
+    const w = vec3.unit_vec3(options.look_from - options.look_at);
+    const u = vec3.unit_vec3(vec3.cross(options.view_up, w));
+    const v = vec3.cross(w, u);
 
-    const viewport_u: Vec3 = .{ viewport_width, 0.0, 0.0 };
-    const viewport_v: Vec3 = .{ 0.0, -viewport_height, 0.0 };
+    const viewport_u: Vec3 = splat_vec3(viewport_width) * u;
+    const viewport_v: Vec3 = splat_vec3(-1.0 * viewport_height) * v;
 
     const pixel_delta_u = viewport_u / splat_vec3(@floatFromInt(options.image_width));
     const pixel_delta_v = viewport_v / splat_vec3(@floatFromInt(image_height));
 
     // world coordinate of viewport point
-    const viewport_upper_left: Vec3 = camera_center - Vec3{ 0.0, 0.0, focal_length } - (viewport_u / splat_vec3(2.0)) - viewport_v / splat_vec3(2.0);
+    const viewport_upper_left: Vec3 = camera_center - splat_vec3(focal_length) * w - (viewport_u / splat_vec3(2.0)) - viewport_v / splat_vec3(2.0);
     const pixel00_location = viewport_upper_left + (pixel_delta_u / splat_vec3(2.0)) + (pixel_delta_v / splat_vec3(2.0));
 
     const pixel_sample_scales: f32 = 1.0 / @as(f32, @floatFromInt(options.samples_per_pixel));
@@ -69,7 +84,11 @@ pub fn init(options: InitOptions) Camera {
         .image_width = options.image_width,
         .samples_per_pixel = options.samples_per_pixel,
         .max_depth = options.max_depth,
-        .v_fov = options.v_fov,
+        .vert_fov = options.vert_fov,
+        .look_from = options.look_from,
+        .look_at = options.look_at,
+        .view_up = options.view_up,
+
         .camera_center = camera_center,
         .image_height = image_height,
         .pixel00_location = pixel00_location,
@@ -77,6 +96,9 @@ pub fn init(options: InitOptions) Camera {
         .pixel_delta_v = pixel_delta_v,
         .pixel_sample_scales = pixel_sample_scales,
         .prng = .init(0),
+        .u = u,
+        .v = v,
+        .w = w,
     };
 }
 
