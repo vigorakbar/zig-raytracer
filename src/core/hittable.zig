@@ -10,7 +10,7 @@ const splat_vec3 = vec3.splat_vec3;
 pub const HitRecord = struct {
     point: Point3,
     normal: Vec3,
-    material: *const Material,
+    material: Material,
     t: f32,
     front_face: bool,
 };
@@ -18,7 +18,7 @@ pub const HitRecord = struct {
 pub const Sphere = struct {
     center: Point3,
     radius: f32,
-    material: *const Material,
+    material: Material,
 
     pub fn hit(self: *const Sphere, r: *const Ray, ray_t: Interval) ?HitRecord {
         const originToCenter = self.center - r.origin;
