@@ -120,8 +120,8 @@ pub fn main(init: std.process.Init) !void {
     var cam: Camera = .init(.{
         .image_width = 1200,
 
-        // 500 will take a while to render. change to small value like 10 for debugging
-        .samples_per_pixel = 500,
+        // change to 500 for sharper image. But it will take a while to render
+        .samples_per_pixel = 10,
 
         .vert_fov = 20.0,
         .look_from = Point3{ 13.0, 2.0, 3.0 },
