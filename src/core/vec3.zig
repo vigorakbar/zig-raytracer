@@ -75,6 +75,15 @@ pub fn random_on_hemisphere(rng: std.Random, normal: Vec3) Vec3 {
     }
 }
 
+pub fn random_in_unit_disk(rng: std.Random) Vec3 {
+    while (true) {
+        const p = Vec3{ numbers.random_range(rng, -1.0, 1.0), numbers.random_range(rng, -1.0, 1.0), 0.0 };
+        if (length_squared(p) < 1.0) {
+            return p;
+        }
+    }
+}
+
 pub fn reflect(vec: Vec3, normal: Vec3) Vec3 {
     return vec - splat_vec3(2.0) * splat_vec3(dot(vec, normal)) * normal;
 }

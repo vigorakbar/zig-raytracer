@@ -24,6 +24,8 @@ vert_fov: f32,
 look_from: Vec3,
 look_at: Vec3,
 view_up: Vec3, // camera-relative "up" direction
+defocus_angle: f32, // Variation angle of rays through each pixel
+focus_dist: f32, // Distance from camera lookfrom point to plane of perfect focus
 
 // camera frame basis vectors
 u: Vec3,
@@ -35,6 +37,8 @@ camera_center: Point3, // Camera center
 pixel00_location: Point3, // Location of pixel 0, 0
 pixel_delta_u: Vec3, // Offset to pixel to the right
 pixel_delta_v: Vec3, // Offset to pixel below
+defocus_disk_u: Vec3, // Defocus disk horizontal radius
+defocus_disk_v: Vec3, // Defocus disk vertical radius
 
 pub const InitOptions = struct {
     aspect_ratio: f32 = 16.0 / 9.0,
@@ -45,6 +49,8 @@ pub const InitOptions = struct {
     look_from: Vec3 = .{ 0.0, 0.0, 0.0 },
     look_at: Vec3 = .{ 0.0, 0.0, -1.0 },
     view_up: Vec3 = .{ 0.0, 1.0, 0.0 },
+    defocus_angle: f32 = 0.0,
+    focus_dist: f32 = 10.0,
 };
 pub fn init(options: InitOptions) Camera {
     const width_f: f32 = @floatFromInt(options.image_width);
@@ -53,12 +59,10 @@ pub fn init(options: InitOptions) Camera {
 
     const camera_center: Point3 = options.look_from;
 
-    const focal_length: f32 = 1.0;
-
     // tan (theta/2) = opposite (viewport_height/2) / adjacent (focal_length)
     // viewport_heigth = 2 * focal_length * tan (theta / 2.0)
     const theta: f32 = std.math.degreesToRadians(options.vert_fov);
-    const viewport_height = 2.0 * focal_length * @tan(theta / 2.0);
+    const viewport_height = 2.0 * @tan(theta / 2.0) * options.focus_dist;
     const viewport_width: f32 = viewport_height *
         @as(f32, @floatFromInt(options.image_width)) /
         @as(f32, @floatFromInt(image_height));
@@ -74,8 +78,13 @@ pub fn init(options: InitOptions) Camera {
     const pixel_delta_v = viewport_v / splat_vec3(@floatFromInt(image_height));
 
     // world coordinate of viewport point
-    const viewport_upper_left: Vec3 = camera_center - splat_vec3(focal_length) * w - (viewport_u / splat_vec3(2.0)) - viewport_v / splat_vec3(2.0);
+    const viewport_upper_left: Vec3 = camera_center - splat_vec3(options.focus_dist) * w - (viewport_u / splat_vec3(2.0)) - viewport_v / splat_vec3(2.0);
     const pixel00_location = viewport_upper_left + (pixel_delta_u / splat_vec3(2.0)) + (pixel_delta_v / splat_vec3(2.0));
+
+    // Calculate the camera defocus disk basis vector
+    const defocus_radius: f32 = options.focus_dist * @tan(std.math.degreesToRadians(options.defocus_angle / 2.0));
+    const defocus_disk_u = u * splat_vec3(defocus_radius);
+    const defocus_disk_v = v * splat_vec3(defocus_radius);
 
     const pixel_sample_scales: f32 = 1.0 / @as(f32, @floatFromInt(options.samples_per_pixel));
 
@@ -88,6 +97,8 @@ pub fn init(options: InitOptions) Camera {
         .look_from = options.look_from,
         .look_at = options.look_at,
         .view_up = options.view_up,
+        .defocus_angle = options.defocus_angle,
+        .focus_dist = options.focus_dist,
 
         .camera_center = camera_center,
         .image_height = image_height,
@@ -99,6 +110,8 @@ pub fn init(options: InitOptions) Camera {
         .u = u,
         .v = v,
         .w = w,
+        .defocus_disk_u = defocus_disk_u,
+        .defocus_disk_v = defocus_disk_v,
     };
 }
 
@@ -156,13 +169,13 @@ fn ray_color(r: *const Ray, depth: usize, world: *HittableList, rng: std.Random)
 }
 
 fn get_ray(self: *Camera, rng: std.Random, i: usize, j: usize) Ray {
-    // Construct a camera ray originating from the origin and directed at randomly sampled
+    // Construct a camera ray originating from the defocus disk and directed at randomly sampled
     // point around the pixel location i, j.
     const offset = sample_square(rng);
     const pixel_sample = self.pixel00_location +
         (splat_vec3((@as(f32, @floatFromInt(i)) + offset[0])) * self.pixel_delta_u) +
         (splat_vec3((@as(f32, @floatFromInt(j)) + offset[1])) * self.pixel_delta_v);
-    const ray_origin = self.camera_center;
+    const ray_origin = if (self.defocus_angle <= 0.0) self.camera_center else defocus_disk_sample(self, rng);
     const ray_direction = pixel_sample - ray_origin;
 
     return .{ .origin = ray_origin, .direction = ray_direction };
@@ -171,4 +184,10 @@ fn get_ray(self: *Camera, rng: std.Random, i: usize, j: usize) Ray {
 fn sample_square(rng: std.Random) Vec3 {
     // sample square coord between -0.5 and +0.5 in x and y
     return .{ rng.float(f32) - 0.5, rng.float(f32) - 0.5, 0.0 };
+}
+
+fn defocus_disk_sample(self: *Camera, rng: std.Random) Point3 {
+    // returns a random point in camera defocus disk
+    const p = vec3.random_in_unit_disk(rng);
+    return self.camera_center + (splat_vec3(p[0]) * self.defocus_disk_u) + (splat_vec3(p[1]) * self.defocus_disk_v);
 }

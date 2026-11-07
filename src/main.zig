@@ -74,6 +74,8 @@ pub fn main(init: std.process.Init) !void {
         .look_from = Point3{ -2.0, 2.0, 1.0 },
         .look_at = Point3{ 0.0, 0.0, -1.0 },
         .view_up = Vec3{ 0.0, 1.0, 0.0 },
+        .defocus_angle = 10.0,
+        .focus_dist = 3.4,
     });
 
     try cam.render(io, &world);
