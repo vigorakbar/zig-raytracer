@@ -8,6 +8,33 @@ It uses Zig-idiomatic, data-oriented patterns instead of class hierarchies and `
 
 Sample output is in [`example_render/`](example_render/) as `.ppm` files
 
+### Preview
+
+<details open>
+<summary>Click to hide/show rendered image preview</summary>
+<br>
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="example_render/part1/png/close_defocus.png" alt="Defocus blur close-up" width="100%"><br>
+      <sub>Defocus blur (close-up)</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="example_render/part1/png/distant_view.png" alt="Distant view" width="100%"><br>
+      <sub>Distant view</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2">
+      <img src="example_render/part1/png/final_render.png" alt="Final render" width="100%"><br>
+      <sub>Final render</sub>
+    </td>
+  </tr>
+</table>
+
+</details>
+
 ## Features
 
 - Sphere intersection with front/back face detection
