@@ -55,8 +55,10 @@ Sample output is in [`example_render/`](example_render/) as `.ppm` files
 ## Build and run
 
 ```sh
-zig build run
+zig build run -Doptimize=ReleaseFast
 ```
+
+`-Doptimize=ReleaseFast` enables optimizations (much faster than the default Debug build).
 
 The render is written to `output.ppm` in the directory you run the command from. Progress is printed to stderr.
 
