@@ -15,8 +15,6 @@ pub const Lambertian = struct {
     albedo: Color,
 
     pub fn scatter(self: *const Lambertian, ray: *const Ray, rec: *const HitRecord, rng: std.Random) ?Scatter {
-        _ = ray;
-
         var scatter_direction = rec.normal + vec3.random_unit_vec3(rng);
 
         if (vec3.near_zero(scatter_direction)) {
@@ -24,7 +22,11 @@ pub const Lambertian = struct {
         }
 
         return Scatter{
-            .scattered = Ray{ .origin = rec.point, .direction = scatter_direction },
+            .scattered = Ray{
+                .origin = rec.point,
+                .direction = scatter_direction,
+                .time = ray.time,
+            },
             .attenuation = self.albedo,
         };
     }
@@ -38,7 +40,11 @@ pub const Metal = struct {
         var reflected = vec3.reflect(ray.direction, rec.normal);
         reflected = vec3.unit_vec3(reflected) + (vec3.splat_vec3(self.fuzz) * vec3.random_unit_vec3(rng));
 
-        const scaterred = Ray{ .origin = rec.point, .direction = reflected };
+        const scaterred = Ray{
+            .origin = rec.point,
+            .direction = reflected,
+            .time = ray.time,
+        };
 
         if (vec3.dot(scaterred.direction, rec.normal) <= 0.0) {
             return null;
@@ -74,6 +80,7 @@ pub const Dielectric = struct {
             .scattered = Ray{
                 .origin = rec.point,
                 .direction = direction,
+                .time = ray.time,
             },
         };
     }

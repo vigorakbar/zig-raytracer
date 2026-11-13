@@ -177,8 +177,9 @@ fn get_ray(self: *Camera, rng: std.Random, i: usize, j: usize) Ray {
         (splat_vec3((@as(f32, @floatFromInt(j)) + offset[1])) * self.pixel_delta_v);
     const ray_origin = if (self.defocus_angle <= 0.0) self.camera_center else defocus_disk_sample(self, rng);
     const ray_direction = pixel_sample - ray_origin;
+    const ray_time = rng.float(f32);
 
-    return .{ .origin = ray_origin, .direction = ray_direction };
+    return .{ .origin = ray_origin, .direction = ray_direction, .time = ray_time };
 }
 
 fn sample_square(rng: std.Random) Vec3 {

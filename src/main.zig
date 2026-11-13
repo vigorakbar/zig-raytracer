@@ -59,6 +59,11 @@ pub fn main(init: std.process.Init) !void {
                         .center = center,
                         .radius = 0.2,
                         .material = material_sphere,
+                        .movement = .{
+                            0.0,
+                            numbers.random_range(rng, 0.0, 0.5),
+                            0.0,
+                        },
                     } });
                 } else if (choose_mat < 0.95) {
                     // metal
@@ -118,10 +123,10 @@ pub fn main(init: std.process.Init) !void {
 
     // Camera
     var cam: Camera = .init(.{
-        .image_width = 1200,
+        .image_width = 400,
 
         // change to 500 for sharper image. But it will take a while to render
-        .samples_per_pixel = 10,
+        .samples_per_pixel = 100,
 
         .vert_fov = 20.0,
         .look_from = Point3{ 13.0, 2.0, 3.0 },

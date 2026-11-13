@@ -6,6 +6,7 @@ const Ray = @This();
 
 origin: Point3,
 direction: Vec3,
+time: f32,
 
 pub fn at(self: *const Ray, t: f32) Point3 {
     return self.origin + vec3.splat_vec3(t) * self.direction;
